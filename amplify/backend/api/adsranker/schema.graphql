@@ -1,0 +1,33 @@
+type User @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  sequence: [String]
+  experimentBucket: String
+  interests: [String]
+}
+
+type Ad @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  title: String
+  description: String
+  category: String
+  embedding: [Float]
+}
+
+type Interaction @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  userId: ID!
+  adId: ID!
+  type: String!
+  timestamp: AWSTimestamp!
+}
+
+type RankedAd {
+  id: ID!
+  title: String
+  category: String
+  score: Float
+}
+
+type Query {
+  getRankedAds(userId: ID!): [RankedAd] @function(name: "adsrankerfe341760-${env}")
+}

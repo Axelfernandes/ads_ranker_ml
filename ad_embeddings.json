@@ -1,0 +1,7 @@
+[
+  {"id":"ad1","title":"iPhone 16 Pro","category":"tech","embedding":[0.02,-0.15,0.34]},
+  {"id":"ad2","title":"AirPods Max","category":"tech","embedding":[0.11,-0.08,0.27]},
+  {"id":"ad3","title":"MacBook Pro M4","category":"tech","embedding":[0.05,-0.12,0.31]},
+  {"id":"ad4","title":"Yoga Mat","category":"fitness","embedding":[-0.2,0.1,0.05]},
+  {"id":"ad5","title":"Protein Powder","category":"fitness","embedding":[-0.15,0.12,0.08]}
+]
