@@ -21,7 +21,7 @@
       "function": {
         "adsrankerfe341760": {
           "deploymentBucketName": "amplify-adsranker-dev-a03d6-deployment",
-          "s3Key": "amplify-builds/adsrankerfe341760-6a6e63333741585a5241-build.zip",
+          "s3Key": "amplify-builds/adsrankerfe341760-396b36332f5150575148-build.zip",
           "apiKey": "1234"
         }
       }

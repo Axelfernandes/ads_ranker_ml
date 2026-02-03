@@ -1,8 +1,10 @@
-const AWS = require('aws-sdk');
 const { cosineSimilarity } = require('./utils');
 
+// Mocking SageMaker Runtime for now since we aren't calling the real endpoint yet
+// const AWS = require('aws-sdk');
+// const sagemaker = new AWS.SageMakerRuntime();
+
 const AD_EMBEDDINGS = JSON.parse(process.env.AD_EMBEDDINGS || '[]');
-const sagemaker = new AWS.SageMakerRuntime();
 
 /**
  * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
@@ -21,12 +23,12 @@ exports.handler = async (event) => {
             interests: ['tech', 'music'],
             sequence: ['ad1', 'ad5']
         };
-        const userText = `interests: ${user.interests.join(',')} history: ${user.sequence.slice(-20).join(' ')}`;
         
         // 2. Retrieval: MiniLM similarity
-        // Mocking user embedding for now
-        const userEmb = new Array(384).fill(0).map(() => Math.random());
+        // Mocking user embedding (384 dimensions)
+        const userEmb = new Array(384).fill(0).map(() => Math.random() - 0.5);
         
+        // Calculate scores against the environment variable embeddings
         const scores = AD_EMBEDDINGS.map((emb) => cosineSimilarity(userEmb, emb.embedding));
         
         const top50 = scores.map((s, i) => ({ 
@@ -37,15 +39,16 @@ exports.handler = async (event) => {
         }))
         .sort((a, b) => b.score - a.score).slice(0, 50);
 
-        // 3. Re-ranking: BERT (Mocked)
+        // 3. Re-ranking: BERT (Mocked re-ranking boost)
         const reranked = top50.slice(0, 20).map(ad => ({
             ...ad,
-            score: ad.score * 0.3 + Math.random() * 0.7
+            score: ad.score * 0.3 + Math.random() * 0.7 // Mock BERT boost
         }));
 
         // 4. Fairness
         const final = applyFairness(reranked.sort((a, b) => b.score - a.score).slice(0, 15));
         
+        console.log("Ranking successful, returning items:", final.length);
         return final.slice(0, 10);
     } catch (error) {
         console.error("Ranking error:", error);
