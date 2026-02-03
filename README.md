@@ -1,46 +1,134 @@
-# Getting Started with Create React App
+# 🎯 LLM-Inspired Ads Ranking Platform (Serverless)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> A production-ready prototype for a modern recommendation system using **AWS Amplify**, **Serverless Lambda**, and **LLM-based ranking logic**.
 
-## Available Scripts
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![AWS Amplify](https://img.shields.io/badge/AWS-Amplify-orange)
+![React](https://img.shields.io/badge/React-18-blue)
 
-In the project directory, you can run:
+## 📖 Overview
 
-### `npm start`
+This project implements a sophisticated **two-stage ranking system** (Retrieval -> Re-ranking) typically found in large-scale tech companies, but architecture for speed and simplicity using AWS Serverless.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+It moves beyond simple keyword matching by using **Vector Embeddings** (semantic search) and **Transformer Models** (BERT-style re-ranking) to show users the most relevant ads based on their interests and interaction history.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Key Features
+- **🧠 Semantic Retrieval**: Uses `MiniLM` style embeddings to find ads that match the *meaning* of a user's interest, not just keywords.
+- **⚡ Two-Stage Ranking**:
+  1.  **Retrieval**: Fast, coarse selection of top 50 candidates using Cosine Similarity.
+  2.  **Re-Ranking**: High-precision sorting of top 10 items using a heavier model logic (mocked BERT).
+- **⚖️ Fairness & Diversity**: Built-in algorithms prevent "category fatigue" (e.g., seeing 10 shoe ads in a row) by enforcing category diversity constraints.
+- **☁️ Fully Serverless**: Zero servers to manage. Uses AWS Lambda, DynamoDB, and AppSync (GraphQL).
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🏗️ Architecture
 
-### `npm run build`
+```mermaid
+graph TD
+    User[User (React Frontend)] -->|GraphQL Query| AppSync[AWS AppSync]
+    AppSync -->|Invoke| Lambda[RankAds Lambda]
+    
+    subgraph "Ranking Engine (Lambda)"
+        Lambda -->|1. Get Profile| DB[(User Profile)]
+        Lambda -->|2. Vector Search| Embeddings[Ad Embeddings (MiniLM)]
+        Lambda -->|3. Re-Rank| Model[BERT Logic]
+        Lambda -->|4. Filter| Diversity[Fairness Algorithm]
+    end
+    
+    Lambda -->|Return Ranked List| AppSync
+    AppSync -->|JSON| User
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🚀 How It Works (The "Secret Sauce")
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+When a user loads the feed, the following pipeline executes in real-time (~200ms):
 
-### `npm run eject`
+1.  **User Context Construction**: The system pulls the user's `interest` tags (e.g., "tech", "hiking") and `interaction history` (last 50 clicks).
+2.  **Vector Retrieval (Candidate Generation)**: 
+    - The user's profile is converted into a 384-dimensional vector.
+    - We calculate the **Cosine Similarity** between the user vector and all Ad vectors.
+    - The top 50 matches are selected.
+3.  **Neural Re-ranking**:
+    - A more powerful model analyzes the top 20 candidates specifically for "click probability."
+    - This step combines the semantic score with behavioral signals.
+4.  **Fairness Adjustment**:
+    - The list is filtered to ensure no single category (e.g., "Clothing") takes up more than 40% of the feed.
+    - This ensures a diverse, engaging user experience.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🛠️ Tech Stack
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+-   **Frontend**: React (TypeScript), Tailwind CSS
+-   **API**: AWS AppSync (GraphQL)
+-   **Auth**: AWS Cognito
+-   **Compute**: AWS Lambda (Node.js)
+-   **Data**: AWS DynamoDB (User/Ad Metadata)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+---
 
-## Learn More
+## ⚡ Getting Started
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Prerequisites
+-   Node.js (v18+)
+-   AWS CLI (configured with credentials)
+-   Amplify CLI (`npm install -g @aws-amplify/cli`)
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Installation
+
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/Axelfernandes/ads_ranker_ml.git
+    cd ads_ranker_ml/ads-ranker
+    ```
+
+2.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Initialize Backend**
+    Connect to your AWS account and provision resources.
+    ```bash
+    amplify init
+    amplify push
+    ```
+
+4.  **Run Locally**
+    ```bash
+    npm start
+    ```
+    The app will open at `http://localhost:3000`. Sign up for an account to see the personalized feed!
+
+---
+
+## 🔮 Future Roadmap
+
+-   [ ] **SageMaker Integration**: Replace the mock embedding logic in Lambda with calls to real `all-MiniLM-L6-v2` endpoints on AWS SageMaker.
+-   [ ] **Real-time Logging**: Pipe interaction events (clicks/views) to Kinesis Firehose for model retraining.
+-   [ ] **A/B Testing**: Implement experimentation buckets in the User schema to test different ranking parameters.
+
+---
+
+## 📂 Project Structure
+
+```
+ads-ranker/
+├── amplify/              # Backend Infrastructure (IaC)
+│   ├── backend/
+│   │   ├── api/          # AppSync (GraphQL) Schema
+│   │   ├── auth/         # Cognito Configuration
+│   │   └── function/     # Lambda Functions (Ranking Logic)
+├── src/
+│   ├── graphql/          # Generated API queries
+│   ├── FeedPage.tsx      # Main UI Component
+│   └── App.tsx           # Entry point & Auth wrapper
+└── ad_embeddings.json    # Pre-computed vector data
+```
+
+---
+
+*Built with ❤️ by Axel Fernandes*
